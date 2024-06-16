@@ -1,0 +1,222 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String               @id @default(uuid())
+  name            String
+  role            UserRole
+  email           String               @unique
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  managedProjects Project[]
+  auditedProjects ProjectsOnAuditors[]
+  clientProjects  ProjectsOnClients[]
+
+  audits    Audit[]
+  versions  Version[]
+  feedbacks Feedback[]
+
+  @@unique([id, email])
+}
+
+model Project {
+  id             String               @id @default(uuid())
+  name           String
+  manager        User                 @relation(fields: [managerId], references: [id])
+  managerId      String
+  auditors       ProjectsOnAuditors[]
+  clients        ProjectsOnClients[]
+  status         ProjectStatus
+  overview       Overview?
+  projectStack   ProjectStacks        @relation(fields: [projectStackId], references: [id])
+  description    String
+  projectStackId Int
+  projectScope   String
+  audits         Audit[]
+  versions       Version[]
+  risks          Risk[]
+  phases         Phase[]
+  sprints        Sprint[]
+  feedbacks      Feedback[]
+  startDate      DateTime             @default(now())
+  endDate        DateTime             @default(now())
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @default(now())
+}
+
+model ProjectsOnClients {
+  client     User     @relation(fields: [clientId], references: [id])
+  clientId   String
+  project    Project  @relation(fields: [projectId], references: [id])
+  projectId  String
+  assignedAt DateTime @default(now())
+
+  @@id([projectId, clientId])
+}
+
+model ProjectsOnAuditors {
+  auditor      User     @relation(fields: [auditorId, auditorEmail], references: [id, email])
+  auditorId    String
+  auditorEmail String
+  project      Project  @relation(fields: [projectId], references: [id])
+  projectId    String
+  assignedAt   DateTime @default(now())
+
+  @@id([projectId, auditorId])
+}
+
+model Overview {
+  id              String  @id @default(uuid())
+  projectOverview String
+  purpose         String
+  goals           String
+  objectives      String
+  budget          Decimal @db.Decimal(20, 2)
+
+  project   Project @relation(fields: [projectId], references: [id])
+  projectId String  @unique
+}
+
+model ProjectStacks {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  projects Project[]
+}
+
+model EscalationMatrix {
+  id String @id @default(uuid())
+}
+
+model Audit {
+  id         String   @id @default(uuid())
+  status     Status
+  review     String
+  auditor    User     @relation(fields: [auditorId], references: [id])
+  auditorId  String
+  queries    String
+  actionItem String
+  date       DateTime
+  project    Project  @relation(fields: [projectId], references: [id])
+  projectId  String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Version {
+  id        String   @id @default(uuid())
+  type      String
+  change    String
+  reason    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Risk {
+  id            String   @id @default(uuid())
+  description   String
+  riskType      RiskType
+  severity      Severity
+  remidialSteps String
+  riskImpact    Severity
+  status        Status
+  closureDate   DateTime
+  project       Project  @relation(fields: [projectId], references: [id])
+  projectId     String   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Phase {
+  id        String   @id @default(uuid())
+  startDate DateTime
+  endDate   DateTime
+  title     String
+  status    Status
+  comments  String
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Sprint {
+  id        String   @id @default(uuid())
+  startDate DateTime
+  endDate   DateTime
+  status    Status
+  comments  String
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Feedback {
+  id           String       @id @default(uuid())
+  feedbackType FeedbackType
+  details      String
+  actionTaken  String
+  closureDate  DateTime
+  user         User         @relation(fields: [userId], references: [id])
+  userId       String
+  project      Project      @relation(fields: [projectId], references: [id])
+  projectId    String       @unique
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+enum FeedbackType {
+  APPRECIATION
+  COMPLAINT
+  SUGGESTION
+}
+
+enum Status {
+  DELAYED
+  ONTIME
+  ONHOLD
+  SIGN_OFF_PENDING
+  SIGNED_OFF
+}
+
+enum RiskType {
+  FINANCIAL
+  OPERATIONAL
+  STRATEGIC
+  LEGAL
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  AUDITOR
+  CLIENT
+}
+
+enum ProjectStatus {
+  INPROGRESS
+  COMPLETED
+  HOLD
+}
