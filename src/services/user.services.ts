@@ -31,10 +31,11 @@ const create = async (_id: string, _name: string, _email: string) => {
       },
     }
   );
+
   if (!role.data[0]) {
     const userRole: any = await axios.post(
       `https://dev-r07u7mel6oip3xhm.us.auth0.com/api/v2/users/${_id}/roles`,
-      {roles: [process.env.CLIENT_ROLE_ID]},
+      { roles: [process.env.CLIENT_ROLE_ID] },
       {
         headers: {
           Authorization: `Bearer ${process.env.MANAGEMENT_API_TOKEN}`,
@@ -42,6 +43,7 @@ const create = async (_id: string, _name: string, _email: string) => {
       }
     );
   }
+
   let _userRole = role.data[0] ? role.data[0].name : "CLIENT";
   let user = await prisma.user.findUnique({ where: { id: _id } });
   if (!user) {
@@ -67,20 +69,15 @@ const remove = async (_id: string) => {
   return user;
 };
 
-const update = async (
-  _id: string,
-  _name: string,
-  _email: string,
-  _role: UserRole
-) => {
+const update = async (userId: string, body: User) => {
   const user = await prisma.user.update({
     where: {
-      id: _id,
+      id: userId,
     },
     data: {
-      name: _name,
-      email: _email,
-      role: _role,
+      name: body.name,
+      email: body.email,
+      role: body.role as UserRole,
     },
   });
   return user;
@@ -100,26 +97,23 @@ const getUserProjects = async (_id: string) => {
     },
   });
   if (user?.role === UserRole.ADMIN) {
-    
     const project = await prisma.project.findMany({
       include: { manager: true },
     });
     //@ts-ignore
-    user.projects = project
+    user.projects = project;
     // @ts-ignore
-    const projects = user
-    
+    const projects = user;
+
     if (projects) {
-      
       // @ts-ignore
       for (let i = 0; i < projects.projects.length; i++) {
         // @ts-ignore
-        const project = projects.projects[i]
+        const project = projects.projects[i];
         const memberCount = await getMemeberCount(project.id);
         // @ts-ignore
         projects.projects[i].members = memberCount;
       }
-      
     }
 
     return projects;

@@ -1,4 +1,3 @@
-import { connect } from "http2";
 import {
   AddAuditorType,
   AddClientType,
@@ -24,9 +23,7 @@ const create = async (body: projectCreateRequest) => {
     const clientDBCheck = await prisma.user.findUnique({
       where: { email: _client.email },
     });
-    console.log("here");
     if (!clientDBCheck) {
-      console.log(clientDBCheck);
       const clientPassword = passwordGen(12);
       const data = {
         email: _client.email,

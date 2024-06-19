@@ -19,7 +19,6 @@ const create = async (req: Request, res: Response) => {
     }
     return res.status(400).json({ error: valid.errors });
   } catch (e) {
-    console.log(e);
     return res.status(500).json({ error: ["Internal server error"] });
   }
 };
@@ -82,5 +81,16 @@ const getUserProjects = async(req:Request, res:Response) => {
   }
 }
 
-const update = async (req: Request, res: Response) => {};
+const update = async (req: Request, res: Response) => {
+  try {
+    if (req.params.id) {
+      const user = await userService.update(req.params.id, req.body)
+      return res.status(200).json({user: user});
+    }
+    return res.status(400).json({error: ["Required user id"]})
+  }catch(e) {
+    
+    return res.status(500).json({error: ["Internal server error", e]})
+  }
+};
 module.exports = { create, remove, get, getAll, update, getByRole, getUserProjects };

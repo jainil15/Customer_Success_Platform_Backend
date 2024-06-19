@@ -60,7 +60,6 @@ const update = async (req: Request, res: Response) => {
     const project = await projectService.update(body);
     return res.status(200).json({ project: project });
   } catch (e) {
-    console.log(e);
     return res.status(500).json({ error: ["Internal server error"] });
   }
 };
